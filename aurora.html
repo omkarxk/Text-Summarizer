@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Context-Aware Text Summarizer</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+            background: linear-gradient(180deg, rgba(11, 15, 26, 0) 0%, rgba(4, 6, 11, 0.2) 100%),
+                        linear-gradient(90deg, rgb(11, 15, 20) 0%, rgb(11, 15, 20) 100%);
+            background-color: #0b0f14;
+            position: relative;
+            overflow-x: hidden;
+            padding: 40px 20px;
+        }
+
+        /* Background gradient orbs */
+        .bg-orb {
+            position: fixed;
+            border-radius: 50%;
+            filter: blur(120px);
+            opacity: 0.4;
+            pointer-events: none;
+        }
+
+        .bg-orb-1 {
+            width: 700px;
+            height: 700px;
+            background: radial-gradient(circle, rgba(59, 130, 246, 0.3) 0%, transparent 70%);
+            top: -100px;
+            left: -100px;
+        }
+
+        .bg-orb-2 {
+            width: 750px;
+            height: 750px;
+            background: radial-gradient(circle, rgba(99, 102, 241, 0.25) 0%, transparent 70%);
+            bottom: -200px;
+            right: -100px;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .header h1 {
+            font-size: 32px;
+            font-weight: 600;
+            color: #e6edf3;
+            margin-bottom: 8px;
+        }
+
+        .header p {
+            font-size: 16px;
+            font-weight: 600;
+            color: white;
+        }
+
+        /* Main Card */
+        .main-card {
+            background: linear-gradient(180deg, #0e1627 0%, #0a1020 100%);
+            border: 1px solid rgba(30, 42, 68, 0.5);
+            border-radius: 16px;
+            box-shadow: 0px 0px 50px 0px rgba(59, 130, 246, 0.14),
+                        0px 4px 30px 0px rgba(77, 163, 255, 0.25);
+            background-color: #111827;
+            padding: 24px 40px 40px;
+            margin-bottom: 24px;
+        }
+
+        /* Text Input Area */
+        .input-area {
+            background: #0b0f14;
+            border: 1px solid #2a2f36;
+            border-radius: 12px;
+            padding: 16px 20px;
+            margin-bottom: 24px;
+        }
+
+        .input-placeholder {
+            font-size: 14px;
+            font-weight: 600;
+            color: #8b949e;
+            margin-bottom: 12px;
+        }
+
+        .upload-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: #161b22;
+            border: 1px solid #2a2f36;
+            border-radius: 18px;
+            padding: 8px 16px;
+            color: #e6edf3;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .upload-btn:hover {
+            border-color: #6366f1;
+        }
+
+        .upload-btn svg {
+            width: 12px;
+            height: 12px;
+        }
+
+        /* Options Section */
+        .options-section {
+            margin-bottom: 24px;
+        }
+
+        .option-row {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+
+        .option-label {
+            font-size: 16px;
+            font-weight: 500;
+            color: #e6edf3;
+            min-width: 200px;
+            padding-top: 8px;
+            flex-shrink: 0;
+        }
+
+        .option-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+
+        .option-btn {
+            background: #161b22;
+            border: 1px solid #2a2f36;
+            border-radius: 18px;
+            padding: 8px 20px;
+            color: white;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            min-width: 110px;
+            text-align: center;
+        }
+
+        .option-btn:hover {
+            border-color: #6366f1;
+        }
+
+        .option-btn.active {
+            border-color: #6366f1;
+        }
+
+        /* Context Options with descriptions */
+        .context-options {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+
+        .context-option {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .context-btn {
+            background: #161b22;
+            border: 1px solid #2a2f36;
+            border-radius: 18px;
+            padding: 8px 20px;
+            color: white;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            min-width: 170px;
+            text-align: center;
+            margin-bottom: 6px;
+        }
+
+        .context-btn:hover {
+            border-color: #6366f1;
+        }
+
+        .context-btn.active {
+            border-color: #6366f1;
+        }
+
+        .context-description {
+            font-size: 12px;
+            font-weight: 500;
+            color: #9ca3af;
+        }
+
+        /* Generate Button */
+        .generate-btn {
+            display: block;
+            width: 260px;
+            margin: 30px auto 0;
+            padding: 14px 24px;
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a855f7 100%);
+            border: none;
+            border-radius: 24px;
+            color: white;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4);
+        }
+
+        .generate-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(99, 102, 241, 0.5);
+        }
+
+        /* Summary Output Card */
+        .summary-card {
+            background: linear-gradient(90deg, #0b1220 0%, #0e1628 100%);
+            border: 1px solid #1f2a44;
+            border-radius: 16px;
+            padding: 24px;
+            min-height: 300px;
+        }
+
+        .summary-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: white;
+            margin-bottom: 20px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid #1f2a44;
+        }
+
+        .summary-content {
+            font-size: 16px;
+            font-weight: 600;
+            color: white;
+            line-height: 1.6;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 24px;
+            }
+
+            .option-row {
+                flex-direction: column;
+            }
+
+            .option-label {
+                margin-bottom: 12px;
+            }
+
+            .option-buttons,
+            .context-options {
+                flex-wrap: wrap;
+            }
+
+            .main-card {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Background orbs -->
+    <div class="bg-orb bg-orb-1"></div>
+    <div class="bg-orb bg-orb-2"></div>
+
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <h1>Context-Aware Text Summarizer</h1>
+            <p>Generate summaries based on size and context complexity.</p>
+        </header>
+
+        <!-- Main Card -->
+        <div class="main-card">
+            <!-- Input Area -->
+            <div class="input-area">
+                <p class="input-placeholder">Paste your text here or upload a document to generate a summary...</p>
+                <button class="upload-btn">
+                    <svg viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M6 2V10M2 6H10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                    </svg>
+                    Upload File
+                </button>
+            </div>
+
+            <!-- Summary Size Options -->
+            <div class="options-section">
+                <div class="option-row">
+                    <span class="option-label">Summary Size</span>
+                    <div class="option-buttons">
+                        <button class="option-btn">Very Small</button>
+                        <button class="option-btn">Small</button>
+                        <button class="option-btn active">Medium</button>
+                        <button class="option-btn">Large</button>
+                        <button class="option-btn">Very Large</button>
+                    </div>
+                </div>
+
+                <!-- Context Dependency Level -->
+                <div class="option-row">
+                    <span class="option-label">Context Dependency Level</span>
+                    <div class="context-options">
+                        <div class="context-option">
+                            <button class="context-btn">Simple Context</button>
+                            <span class="context-description">Straightforward, brief</span>
+                        </div>
+                        <div class="context-option">
+                            <button class="context-btn active">Balanced Context</button>
+                            <span class="context-description">Balanced, moderate detail</span>
+                        </div>
+                        <div class="context-option">
+                            <button class="context-btn">Detailed Context</button>
+                            <span class="context-description">In-depth, nuanced</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Generate Button -->
+            <button class="generate-btn">Generate Summary</button>
+        </div>
+
+        <!-- Summary Output Card -->
+        <div class="summary-card">
+            <h2 class="summary-title">Generated Summary</h2>
+            <p class="summary-content">
+                This summary provides a concise overview of the document by extracting the most important points while preserving contextual meaning.
+            </p>
+        </div>
+    </div>
+
+    <script>
+        // Toggle active state for option buttons
+        document.querySelectorAll('.option-buttons').forEach(group => {
+            group.querySelectorAll('.option-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    group.querySelectorAll('.option-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                });
+            });
+        });
+
+        // Toggle active state for context buttons
+        document.querySelectorAll('.context-options').forEach(group => {
+            group.querySelectorAll('.context-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    group.querySelectorAll('.context-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                });
+            });
+        });
+    </script>
+</body>
+</html>
