@@ -1,0 +1,23 @@
+# Python Dependencies for Text Summarizer App
+# Install with: pip install -r requirements.txt
+
+# Web Framework
+flask==3.1.2
+flask-cors==6.0.2
+
+# Machine Learning / NLP
+transformers>=5.0.0
+torch>=2.0.0
+sumy>=0.11.0
+nltk>=3.9.0
+
+# Tokenization
+sentencepiece>=0.2.0
+protobuf>=6.0.0
+
+# File Processing
+PyPDF2>=3.0.0
+python-docx>=1.0.0
+
+# Production Server
+gunicorn>=24.0.0

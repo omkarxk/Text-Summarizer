@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Context-Aware Text Summarizer</title>
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <!-- ========== BACKGROUND EFFECTS ========== -->
+    <div class="bg-orb bg-orb-1"></div>
+    <div class="bg-orb bg-orb-2"></div>
+    <div class="bg-orb bg-orb-3"></div>
+    <div class="bg-orb bg-orb-4"></div>
+
+    <div class="container">
+        
+        <!-- ========== HEADER ========== -->
+        <header class="header">
+            <h1>Professional Document Summarizer</h1>
+            <p>AI-Powered Abstractive Summarization with Customizable Output</p>
+        </header>
+
+        <!-- ========== MAIN INPUT CARD ========== -->
+        <div class="main-card">
+            
+            <!-- Text Input Area -->
+            <div class="input-area">
+                <textarea 
+                    id="inputText" 
+                    class="input-textarea" 
+                    placeholder="Paste your text here or upload a document to generate a summary..."
+                ></textarea>
+                
+                <div class="input-actions">
+                    <!-- File Upload (Hidden Input) -->
+                    <input type="file" id="fileInput" accept="*/*" style="display: none;">
+                    
+                    <!-- Upload Button -->
+                    <button class="upload-btn" onclick="document.getElementById('fileInput').click()">
+                        <svg viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M7 1V9M7 1L4 4M7 1L10 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M1 10V12C1 12.5523 1.44772 13 2 13H12C12.5523 13 13 12.5523 13 12V10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                        </svg>
+                        Upload File
+                    </button>
+                    
+                    <!-- File Indicator (shown after upload) -->
+                    <div id="fileIndicator" class="file-indicator" style="display: none;">
+                        <svg class="file-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M14 2H6C5.46957 2 4.96086 2.21071 4.58579 2.58579C4.21071 2.96086 4 3.46957 4 4V20C4 20.5304 4.21071 21.0391 4.58579 21.4142C4.96086 21.7893 5.46957 22 6 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V8L14 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M14 2V8H20" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M9 15L11 17L15 13" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        <span id="fileName" class="file-name"></span>
+                        <button class="file-remove-btn" onclick="removeFile()" title="Remove file">
+                            <svg viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M3 3L11 11M11 3L3 11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                            </svg>
+                        </button>
+                    </div>
+                    
+                    <!-- Action Icons -->
+                    <div class="action-icons">
+                        <!-- Paste Button -->
+                        <button class="icon-btn" title="Paste from clipboard" onclick="pasteText()">
+                            <svg viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M4.5 3.5V2C4.5 1.44772 4.94772 1 5.5 1H12C12.5523 1 13 1.44772 13 2V8.5C13 9.05228 12.5523 9.5 12 9.5H10.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+                                <rect x="1" y="4.5" width="9" height="8.5" rx="1" stroke="currentColor" stroke-width="1.2"/>
+                            </svg>
+                        </button>
+                        
+                        <!-- Clear Button -->
+                        <button class="icon-btn" title="Clear text" onclick="clearText()">
+                            <svg viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M2 4H12M5 4V2.5C5 2.22386 5.22386 2 5.5 2H8.5C8.77614 2 9 2.22386 9 2.5V4M11 4V11.5C11 12.0523 10.5523 12.5 10 12.5H4C3.44772 12.5 3 12.0523 3 11.5V4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ========== OPTIONS SECTION ========== -->
+            <div class="options-section">
+                
+                <!-- Summary Size Options -->
+                <div class="option-row">
+                    <span class="option-label">Summary Size</span>
+                    <div class="option-buttons">
+                        <button class="option-btn">Very Small</button>
+                        <button class="option-btn">Small</button>
+                        <button class="option-btn active">Medium</button>
+                        <button class="option-btn">Large</button>
+                        <button class="option-btn">Very Large</button>
+                    </div>
+                </div>
+
+                <!-- Context Dependency Level -->
+                <div class="option-row">
+                    <span class="option-label">Context Dependency Level</span>
+                    <div class="context-options">
+                        <div class="context-option">
+                            <button class="context-btn">Simple Context</button>
+                            <span class="context-description">Straightforward, brief</span>
+                        </div>
+                        <div class="context-option">
+                            <button class="context-btn active">Balanced Context</button>
+                            <span class="context-description">Balanced, moderate detail</span>
+                        </div>
+                        <div class="context-option">
+                            <button class="context-btn">Detailed Context</button>
+                            <span class="context-description">In-depth, nuanced</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Generate Button -->
+            <button class="generate-btn" id="generateBtn" onclick="generateSummary()">
+                Generate Summary
+            </button>
+        </div>
+
+        <!-- ========== SUMMARY OUTPUT CARD ========== -->
+        <div class="summary-card">
+            <div class="summary-header">
+                <h2 class="summary-title">Generated Summary</h2>
+                <div class="summary-actions">
+                    <!-- Copy Button -->
+                    <button class="icon-btn" title="Copy to clipboard" onclick="copySummary()">
+                        <svg viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M4.5 3.5V2C4.5 1.44772 4.94772 1 5.5 1H12C12.5523 1 13 1.44772 13 2V8.5C13 9.05228 12.5523 9.5 12 9.5H10.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+                            <rect x="1" y="4.5" width="9" height="8.5" rx="1" stroke="currentColor" stroke-width="1.2"/>
+                        </svg>
+                    </button>
+                    
+                    <!-- Download Button -->
+                    <button class="icon-btn" title="Download as file" onclick="downloadSummary()">
+                        <svg viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M7 1V9M7 9L4 6M7 9L10 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M1 10V12C1 12.5523 1.44772 13 2 13H12C12.5523 13 13 12.5523 13 12V10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            
+            <div class="summary-content">
+                <p class="summary-text" id="summaryText">
+                    Your generated summary will appear here...
+                </p>
+            </div>
+            
+            <!-- Statistics Bar (hidden by default) -->
+            <div id="statsBar" class="stats-bar" style="display: none;">
+                <span id="statsText"></span>
+            </div>
+        </div>
+
+        <!-- ========== FOOTER ========== -->
+        <footer class="footer">
+            <p><span>Professional Document Summarizer</span> | T5 Transformer AI | 2026</p>
+        </footer>
+    </div>
+
+    <!-- JavaScript -->
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>
