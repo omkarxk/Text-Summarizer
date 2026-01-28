@@ -22,28 +22,36 @@ class HybridSummarizer:
     - Configurable summary size and detail level
     """
     
-    def __init__(self, model_name: str = "sshleifer/distilbart-cnn-6-6"):
+    def __init__(self, model_name: str = "t5-base"):
         """
         Initialize all components.
-        Uses DistilBART - 50% faster than BART-large with similar quality!
+        Uses Pegasus-xsum - state-of-the-art abstractive summarization!
         
         Args:
             model_name: HuggingFace model identifier
         """
         self.model_name = model_name
+        self.is_t5_model = "t5" in model_name.lower()
+        self.is_pegasus_model = "pegasus" in model_name.lower()
         
         # Initialize components
         self.chunker = TextChunker(max_words=750)
         self.model_loader = ModelLoader()
         
-        # Load the model
-        model, tokenizer = self.model_loader.load_bart(model_name)
+        # Load the appropriate model
+        if self.is_pegasus_model:
+            model, tokenizer = self.model_loader.load_pegasus(model_name)
+        elif self.is_t5_model:
+            model, tokenizer = self.model_loader.load_t5(model_name)
+        else:
+            model, tokenizer = self.model_loader.load_bart(model_name)
         
         # Initialize summarizer with loaded model
         self.summarizer = Summarizer(
             model=model,
             tokenizer=tokenizer,
-            device=self.model_loader.device
+            device=self.model_loader.device,
+            is_t5_model=self.is_t5_model
         )
     
     def summarize_text(self, text: str, max_length: int = 150, 

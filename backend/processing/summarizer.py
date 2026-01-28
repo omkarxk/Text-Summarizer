@@ -14,7 +14,7 @@ class Summarizer:
     Supports single text and batch processing.
     """
     
-    def __init__(self, model, tokenizer, device):
+    def __init__(self, model, tokenizer, device, is_t5_model: bool = False):
         """
         Initialize the summarizer with a model.
         
@@ -22,10 +22,12 @@ class Summarizer:
             model: Loaded transformer model
             tokenizer: Corresponding tokenizer
             device: torch device (cuda/mps/cpu)
+            is_t5_model: Whether this is a T5 model (needs "summarize:" prefix)
         """
         self.model = model
         self.tokenizer = tokenizer
         self.device = device
+        self.is_t5_model = is_t5_model
     
     def _ensure_complete_sentence(self, text: str) -> str:
         """
@@ -71,8 +73,11 @@ class Summarizer:
         max_length = min(max(max_length, 50), 512)
         min_length = min(max(min_length, 10), max_length - 20)
         
+        # Add T5 summarization prefix if needed
+        input_text = f"summarize: {text}" if self.is_t5_model else text
+        
         inputs = self.tokenizer(
-            text,
+            input_text,
             return_tensors="pt",
             max_length=1024,
             truncation=True,
@@ -146,8 +151,11 @@ class Summarizer:
         max_length = min(max(max_length, 50), 512)
         min_length = min(max(min_length, 10), max_length - 20)
         
+        # Add T5 summarization prefix if needed
+        input_texts = [f"summarize: {t}" for t in texts] if self.is_t5_model else texts
+        
         inputs = self.tokenizer(
-            texts,
+            input_texts,
             return_tensors="pt",
             max_length=1024,
             truncation=True,
