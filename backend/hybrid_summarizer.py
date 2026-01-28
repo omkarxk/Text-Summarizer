@@ -22,7 +22,7 @@ class HybridSummarizer:
     - Configurable summary size and detail level
     """
     
-    def __init__(self, model_name: str = "t5-base"):
+    def __init__(self, model_name: str = "sshleifer/distilbart-cnn-6-6"):
         """
         Initialize all components.
         Uses Pegasus-xsum - state-of-the-art abstractive summarization!
@@ -189,7 +189,7 @@ class HybridSummarizer:
             "extracted": "",
             "final_summary": final_summary
         }
-    
+      
     def get_status(self) -> dict:
         """
         Get system status and model info.
