@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Summarize Text - BART Model</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body>
+    <div class="particle particle-1"></div>
+    <div class="particle particle-2"></div>
+
+    <div class="container">
+        <h1>Summarize Text</h1>
+
+        <div class="grid">
+            <!-- Left Panel - Input -->
+            <div class="panel panel-left">
+                <!-- Mode Toggle -->
+                <div class="mode-toggle">
+                    <button class="mode-btn active" id="pdfModeBtn" onclick="switchMode('pdf')">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+                        </svg>
+                        Upload PDF
+                    </button>
+                    <button class="mode-btn" id="textModeBtn" onclick="switchMode('text')">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                        </svg>
+                        Add Text
+                    </button>
+                </div>
+
+                <!-- PDF Upload Mode -->
+                <div id="pdfMode">
+                    <div class="panel-header">
+                        <h2 class="panel-title">Uploaded PDF</h2>
+                    </div>
+
+                    <div id="uploadArea" class="upload-area" onclick="document.getElementById('fileInput').click()">
+                        <svg class="upload-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+                        </svg>
+                        <p class="upload-text">Click to upload PDF</p>
+                        <p class="upload-subtext">or drag and drop</p>
+                    </div>
+
+                    <div id="filePreview" class="file-preview hidden">
+                        <div class="file-info">
+                            <div class="file-name">
+                                <div class="file-icon">
+                                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width: 16px; height: 16px;">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                                    </svg>
+                                </div>
+                                <span id="fileName"></span>
+                            </div>
+                            <button class="close-btn" onclick="removeFile()">✕</button>
+                        </div>
+                        <div class="pdf-preview">
+                            <div class="pdf-toolbar">
+                                <span class="pdf-filename" id="pdfFilename"></span>
+                                <div class="pdf-controls">
+                                    <span class="pdf-page-info">Page <span id="currentPage">1</span> / <span id="totalPages">1</span></span>
+                                    <button onclick="zoomOut()">-</button>
+                                    <span class="pdf-page-info"><span id="zoomLevel">100</span>%</span>
+                                    <button onclick="zoomIn()">+</button>
+                                </div>
+                            </div>
+                            <iframe id="pdfViewer" style="display: none;"></iframe>
+                            <div class="pdf-preview-content" id="pdfPlaceholder">
+                                <svg class="pdf-preview-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                                </svg>
+                                <p style="font-weight: 500; margin-bottom: 0.25rem;">Loading PDF...</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <input type="file" id="fileInput" accept="application/pdf" onchange="handleFileUpload(event)" class="hidden">
+                </div>
+
+                <!-- Text Input Mode -->
+                <div id="textMode" class="hidden">
+                    <div class="panel-header">
+                        <h2 class="panel-title">Enter Text</h2>
+                    </div>
+                    <p class="input-description">Paste or type the text you want to summarize</p>
+                    <textarea id="textInput" class="text-input" placeholder="Enter your text here..."></textarea>
+                </div>
+
+                <!-- Options Section -->
+                <div class="options-section">
+                    <div class="option-group">
+                        <label class="option-label">Summary Size</label>
+                        <div class="option-buttons">
+                            <button class="option-btn" data-size="very-small" onclick="setSummarySize('very-small')">Very Small</button>
+                            <button class="option-btn" data-size="small" onclick="setSummarySize('small')">Small</button>
+                            <button class="option-btn active" data-size="medium" onclick="setSummarySize('medium')">Medium</button>
+                            <button class="option-btn" data-size="long" onclick="setSummarySize('long')">Long</button>
+                            <button class="option-btn" data-size="very-long" onclick="setSummarySize('very-long')">Very Long</button>
+                        </div>
+                    </div>
+
+                    <div class="option-group">
+                        <label class="option-label">Context Level</label>
+                        <div class="option-buttons">
+                            <button class="option-btn" data-level="easy" onclick="setContextLevel('easy')">Easy</button>
+                            <button class="option-btn active" data-level="medium" onclick="setContextLevel('medium')">Medium</button>
+                            <button class="option-btn" data-level="hard" onclick="setContextLevel('hard')">Hard</button>
+                        </div>
+                    </div>
+                </div>
+
+                <button class="summarize-btn" id="summarizeBtn" onclick="summarize()" disabled>
+                    Summarize
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/>
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Right Panel - Summary -->
+            <div class="panel panel-right">
+                <div class="panel-header">
+                    <h2 class="panel-title">Summarized Text</h2>
+                    <button class="copy-btn hidden" id="copyBtn" onclick="copySummary()" title="Copy to clipboard">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+                        </svg>
+                    </button>
+                </div>
+
+                <div class="summary-content">
+                    <div id="emptyState" class="empty-state">
+                        <div>
+                            <svg class="empty-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/>
+                            </svg>
+                            <p>Your summary will appear here</p>
+                        </div>
+                    </div>
+                    <p id="summaryText" class="summary-text hidden"></p>
+                    
+                    <div id="statsSection" class="stats hidden">
+                        <div class="stat">
+                            <div class="stat-label">Original Words</div>
+                            <div class="stat-value" id="originalWords">0</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-label">Summary Words</div>
+                            <div class="stat-value" id="summaryWords">0</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-label">Compression</div>
+                            <div class="stat-value" id="compression">0%</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>

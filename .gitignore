@@ -1,12 +1,27 @@
-bart_dailymail_final/
-
-# Model artifacts
+# Model artifacts (too large for GitHub)
 bart_dailymail_final/
 
 # Python / virtualenv
 .venv/
 __pycache__/
 *.pyc
+*.pyo
+*.pyd
+
+# Environment
+.env
+.env.local
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
 
 # OS
 .DS_Store
