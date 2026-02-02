@@ -1,0 +1,12 @@
+bart_dailymail_final/
+
+# Model artifacts
+bart_dailymail_final/
+
+# Python / virtualenv
+.venv/
+__pycache__/
+*.pyc
+
+# OS
+.DS_Store

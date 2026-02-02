@@ -1,0 +1,1278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Summarize Text - BART Model</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #1e293b 0%, #581c87 50%, #1e293b 100%);
+            min-height: 100vh;
+            padding: 2rem;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        /* Animated background particles */
+        .particle {
+            position: absolute;
+            border-radius: 50%;
+            pointer-events: none;
+            filter: blur(60px);
+            animation: pulse 4s ease-in-out infinite;
+        }
+
+        .particle-1 {
+            width: 384px;
+            height: 384px;
+            background: rgba(249, 115, 22, 0.1);
+            top: -192px;
+            left: -192px;
+        }
+
+        .particle-2 {
+            width: 384px;
+            height: 384px;
+            background: rgba(59, 130, 246, 0.1);
+            bottom: -192px;
+            right: -192px;
+            animation-delay: 1s;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 0.5;
+                transform: scale(1);
+            }
+            50% {
+                opacity: 0.8;
+                transform: scale(1.1);
+            }
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 10;
+        }
+
+        h1 {
+            color: white;
+            text-align: center;
+            font-size: 3rem;
+            margin-bottom: 3rem;
+            font-weight: 700;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+        }
+
+        @media (max-width: 768px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+            h1 {
+                font-size: 2rem;
+            }
+        }
+
+        .panel {
+            background: rgba(30, 41, 59, 0.5);
+            backdrop-filter: blur(10px);
+            border-radius: 1.5rem;
+            padding: 2rem;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            min-height: 700px;
+        }
+
+        .panel-left {
+            border: 1px solid rgba(249, 115, 22, 0.3);
+        }
+
+        .panel-right {
+            border: 1px solid rgba(59, 130, 246, 0.3);
+        }
+
+        .mode-toggle {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .mode-btn {
+            flex: 1;
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 0.5rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .mode-btn.active {
+            background: #f97316;
+            color: white;
+        }
+
+        .mode-btn:not(.active) {
+            background: #334155;
+            color: #cbd5e1;
+        }
+
+        .mode-btn:not(.active):hover {
+            background: #475569;
+        }
+
+        .panel-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+        }
+
+        .panel-title {
+            color: white;
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+
+        .upload-area {
+            border: 2px dashed #475569;
+            border-radius: 1rem;
+            padding: 4rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            min-height: 300px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .upload-area:hover {
+            border-color: rgba(249, 115, 22, 0.5);
+        }
+
+        .upload-icon {
+            width: 48px;
+            height: 48px;
+            margin: 0 auto 1rem;
+            color: #94a3b8;
+        }
+
+        .upload-text {
+            color: #cbd5e1;
+            margin-bottom: 0.5rem;
+        }
+
+        .upload-subtext {
+            color: #64748b;
+            font-size: 0.875rem;
+        }
+
+        .file-preview {
+            background: rgba(15, 23, 42, 0.5);
+            border-radius: 1rem;
+            padding: 1rem;
+        }
+
+        .file-info {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 0.75rem;
+        }
+
+        .file-name {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: white;
+            font-weight: 500;
+        }
+
+        .file-icon {
+            width: 32px;
+            height: 32px;
+            background: #ef4444;
+            border-radius: 0.25rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            color: #94a3b8;
+            cursor: pointer;
+            font-size: 1.25rem;
+            padding: 0.25rem;
+            transition: color 0.3s;
+        }
+
+        .close-btn:hover {
+            color: white;
+        }
+
+        .pdf-preview {
+            background: #2d3748;
+            border-radius: 0.5rem;
+            height: 500px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .pdf-preview object {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+
+        .pdf-preview-content {
+            text-align: center;
+            color: #475569;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .pdf-preview-icon {
+            width: 64px;
+            height: 64px;
+            margin: 0 auto 0.5rem;
+            color: #94a3b8;
+        }
+
+        .pdf-toolbar {
+            background: #1a202c;
+            padding: 0.5rem 1rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            border-bottom: 1px solid #4a5568;
+        }
+
+        .pdf-filename {
+            color: #cbd5e1;
+            font-size: 0.875rem;
+            flex: 1;
+        }
+
+        .pdf-controls {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .pdf-controls button {
+            background: #2d3748;
+            border: 1px solid #4a5568;
+            color: #cbd5e1;
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.25rem;
+            cursor: pointer;
+            font-size: 0.875rem;
+        }
+
+        .pdf-controls button:hover {
+            background: #374151;
+        }
+
+        .pdf-page-info {
+            color: #94a3b8;
+            font-size: 0.875rem;
+        }
+
+        .text-input {
+            width: 100%;
+            height: 400px;
+            background: rgba(15, 23, 42, 0.5);
+            border: 1px solid #475569;
+            border-radius: 1rem;
+            padding: 1rem;
+            color: white;
+            font-family: inherit;
+            font-size: 1rem;
+            resize: none;
+            transition: border-color 0.3s;
+        }
+
+        .text-input:focus {
+            outline: none;
+            border-color: rgba(249, 115, 22, 0.5);
+        }
+
+        .text-input::placeholder {
+            color: #64748b;
+        }
+
+        .input-description {
+            color: #94a3b8;
+            font-size: 0.875rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .summarize-btn {
+            width: 100%;
+            margin-top: 1.5rem;
+            background: linear-gradient(to right, #2563eb, #3b82f6);
+            color: white;
+            font-weight: 600;
+            padding: 1rem;
+            border: none;
+            border-radius: 9999px;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            font-size: 1rem;
+        }
+
+        .summarize-btn:hover:not(:disabled) {
+            background: linear-gradient(to right, #1d4ed8, #2563eb);
+        }
+
+        .summarize-btn:disabled {
+            background: linear-gradient(to right, #475569, #475569);
+            cursor: not-allowed;
+        }
+
+        .spinner {
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(255, 255, 255, 0.4);
+            border-bottom-color: transparent;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .summary-content {
+            background: rgba(15, 23, 42, 0.3);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            min-height: 600px;
+            height: calc(100% - 4rem);
+        }
+
+        .summary-text {
+            color: #e2e8f0;
+            line-height: 1.75;
+            white-space: pre-wrap;
+        }
+
+        .empty-state {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            text-align: center;
+            color: #64748b;
+        }
+
+        .empty-icon {
+            width: 48px;
+            height: 48px;
+            margin: 0 auto 0.75rem;
+            opacity: 0.5;
+        }
+
+        .copy-btn {
+            padding: 0.5rem;
+            background: none;
+            border: none;
+            cursor: pointer;
+            border-radius: 0.5rem;
+            transition: background 0.3s;
+            color: #cbd5e1;
+        }
+
+        .copy-btn:hover {
+            background: #334155;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        svg {
+            width: 20px;
+            height: 20px;
+        }
+
+        .options-section {
+            margin-top: 1.5rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid rgba(71, 85, 105, 0.5);
+        }
+
+        .option-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .option-label {
+            color: #cbd5e1;
+            font-size: 0.875rem;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+            display: block;
+        }
+
+        .option-buttons {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .option-btn {
+            padding: 0.5rem 1rem;
+            border: 1px solid #475569;
+            background: rgba(51, 65, 85, 0.5);
+            color: #cbd5e1;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
+        .option-btn:hover {
+            border-color: #f97316;
+            background: rgba(249, 115, 22, 0.1);
+        }
+
+        .option-btn.active {
+            background: #f97316;
+            border-color: #f97316;
+            color: white;
+        }
+
+        .stats {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1rem;
+            padding: 1rem;
+            background: rgba(15, 23, 42, 0.3);
+            border-radius: 0.5rem;
+        }
+
+        .stat {
+            flex: 1;
+            text-align: center;
+        }
+
+        .stat-label {
+            color: #94a3b8;
+            font-size: 0.75rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .stat-value {
+            color: #3b82f6;
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+        /* Figma-inspired layout */
+        body {
+            background: radial-gradient(900px 600px at 20% 10%, rgba(56, 189, 248, 0.18), rgba(15, 23, 42, 0)),
+                        radial-gradient(800px 600px at 80% 20%, rgba(99, 102, 241, 0.18), rgba(15, 23, 42, 0)),
+                        radial-gradient(900px 700px at 50% 90%, rgba(236, 72, 153, 0.16), rgba(15, 23, 42, 0)),
+                        linear-gradient(135deg, #0b1020 0%, #1a1f3a 45%, #3b1b3a 100%);
+            color: #e6edf3;
+        }
+
+        .orb {
+            position: absolute;
+            width: 700px;
+            height: 700px;
+            border-radius: 50%;
+            filter: blur(120px);
+            opacity: 0.35;
+            z-index: 0;
+        }
+
+        .orb-left {
+            background: #5b84ff;
+            top: 40px;
+            left: 120px;
+        }
+
+        .orb-right {
+            background: #ff7ab6;
+            bottom: -120px;
+            right: 120px;
+        }
+
+        .page {
+            position: relative;
+            max-width: 100%;
+            margin: 0 auto;
+            padding: 32px 24px 64px;
+            z-index: 1;
+        }
+
+        .hero {
+            text-align: center;
+            margin-bottom: 32px;
+        }
+
+        .hero h1 {
+            font-size: 32px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .hero p {
+            color: #cbd5e1;
+            font-size: 14px;
+        }
+
+        .columns {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+            width: 100%;
+        }
+
+        @media (max-width: 960px) {
+            .columns {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .card {
+            background: linear-gradient(180deg, #0e1627 0%, #0a1020 100%);
+            border: 1px solid rgba(30, 42, 68, 0.6);
+            border-radius: 16px;
+            box-shadow: 0 0 50px rgba(59, 130, 246, 0.14);
+            padding: 22px;
+            min-height: 820px;
+        }
+
+        .mode-toggle {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+
+        .mode-btn {
+            background: #111827;
+            border: 1px solid #2a2f36;
+            color: #cbd5e1;
+            padding: 6px 14px;
+            border-radius: 16px;
+            font-size: 13px;
+            cursor: pointer;
+        }
+
+        .mode-btn.active {
+            border-color: #6366f1;
+            color: #ffffff;
+            box-shadow: 0 0 10px rgba(99, 102, 241, 0.5);
+        }
+
+        .input-label {
+            color: #9ca3af;
+            font-size: 12px;
+            margin-bottom: 12px;
+        }
+
+        .input-shell {
+            background: #0b0f14;
+            border: 1px solid #2a2f36;
+            border-radius: 12px;
+            padding: 16px;
+        }
+
+        .input-textarea {
+            width: 100%;
+            height: 380px;
+            background: transparent;
+            border: none;
+            outline: none;
+            color: #e6edf3;
+            font-size: 14px;
+            resize: vertical;
+        }
+
+        .pdf-preview {
+            margin-top: 14px;
+            background: #0a0f1d;
+            border: 1px solid #1f2a44;
+            border-radius: 12px;
+            overflow: hidden;
+            height: 620px;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .pdf-toolbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            padding: 8px 10px;
+            background: #0f1526;
+            border-bottom: 1px solid #1f2a44;
+            color: #cbd5e1;
+            font-size: 12px;
+        }
+
+        .pdf-toolbar .controls {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+        }
+
+        .pdf-toolbar button {
+            background: #161b22;
+            border: 1px solid #2a2f36;
+            color: #e6edf3;
+            padding: 4px 8px;
+            border-radius: 10px;
+            font-size: 12px;
+            cursor: pointer;
+        }
+
+        .pdf-canvas-wrap {
+            position: relative;
+            flex: 1;
+            overflow: auto;
+            background: #0b0f14;
+            padding: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #pdfPreviewHost {
+            width: 100%;
+            height: 100%;
+            background: #0b0f14;
+            position: relative;
+            z-index: 1;
+        }
+
+        .pdf-fallback {
+            margin-left: auto;
+            color: #a5b4fc;
+            font-size: 12px;
+            text-decoration: underline;
+            cursor: pointer;
+        }
+
+        .pdf-placeholder {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #9ca3af;
+            font-size: 13px;
+            background: #0b0f14;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .upload-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 12px;
+            flex-wrap: wrap;
+        }
+
+        .upload-btn {
+            background: #161b22;
+            border: 1px solid #2a2f36;
+            color: #e6edf3;
+            padding: 8px 16px;
+            border-radius: 18px;
+            font-size: 14px;
+            cursor: pointer;
+            position: relative;
+            z-index: 2;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .file-input {
+            position: absolute;
+            inset: 0;
+            opacity: 0;
+            cursor: pointer;
+            width: 100%;
+            height: 100%;
+        }
+
+        .file-name {
+            color: #cbd5e1;
+            font-size: 12px;
+        }
+
+        .clear-btn {
+            background: transparent;
+            border: 1px solid #2a2f36;
+            color: #9ca3af;
+            padding: 6px 12px;
+            border-radius: 14px;
+            font-size: 12px;
+            cursor: pointer;
+        }
+
+        .options {
+            margin-top: 18px;
+            display: grid;
+            gap: 16px;
+        }
+
+        .option-title {
+            font-size: 14px;
+            color: #e6edf3;
+            margin-bottom: 8px;
+        }
+
+        .pill-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .pill {
+            background: #161b22;
+            border: 1px solid #2a2f36;
+            color: #e6edf3;
+            padding: 6px 14px;
+            border-radius: 18px;
+            font-size: 13px;
+            cursor: pointer;
+        }
+
+        .pill.active {
+            border-color: #6366f1;
+            box-shadow: 0 0 12px rgba(99, 102, 241, 0.5);
+        }
+
+        .context-options {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            align-items: flex-start;
+        }
+
+        .context-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .context-help {
+            color: #9ca3af;
+            font-size: 11px;
+            text-align: center;
+        }
+
+        .primary-btn {
+            margin-top: 18px;
+            width: 260px;
+            align-self: center;
+            background: linear-gradient(180deg, #6366f1 0%, #4f46e5 100%);
+            color: #ffffff;
+            border: none;
+            border-radius: 24px;
+            padding: 12px 20px;
+            font-weight: 700;
+            cursor: pointer;
+            box-shadow: 0 10px 24px rgba(79, 70, 229, 0.35);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .primary-btn:hover:not(:disabled) {
+            filter: brightness(1.08);
+        }
+
+        .primary-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .output-card {
+            background: #0a0f1d;
+        }
+
+        .output-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+        }
+
+        .output-header h2 {
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .output-body {
+            background: linear-gradient(90deg, #0b1220 0%, #0e1628 100%);
+            border: 1px solid #1f2a44;
+            border-radius: 14px;
+            padding: 18px;
+            min-height: 640px;
+        }
+
+        .summary-text {
+            color: #e6edf3;
+            line-height: 1.6;
+        }
+
+        .empty-state {
+            color: #9ca3af;
+            font-size: 14px;
+        }
+
+        .stats {
+            margin-top: 16px;
+            background: rgba(15, 23, 42, 0.6);
+            border-radius: 10px;
+            padding: 10px;
+        }
+
+        .stat-value {
+            color: #a5b4fc;
+        }
+    </style>
+</head>
+<body>
+    <div class="orb orb-left"></div>
+    <div class="orb orb-right"></div>
+
+    <div class="page">
+        <header class="hero">
+            <h1>Context-Aware Text Summarizer</h1>
+            <p>Generate summaries based on size and context complexity.</p>
+        </header>
+
+        <div class="columns">
+            <section class="card input-card">
+                <div class="mode-toggle">
+                    <button class="mode-btn active" id="textModeBtn" type="button" onclick="switchMode('text')">Text Input</button>
+                    <button class="mode-btn" id="pdfModeBtn" type="button" onclick="switchMode('pdf')">PDF Upload</button>
+                </div>
+                <div class="input-label">Paste your text here or upload a document to generate a summary...</div>
+                <div class="input-shell">
+                    <div id="textMode">
+                        <textarea id="textInput" class="input-textarea" placeholder="Paste text here..."></textarea>
+                    </div>
+                    <div id="pdfMode" class="hidden">
+                        <div class="upload-row">
+                            <label class="upload-btn" type="button">
+                                Upload File
+                                <input type="file" id="fileInput" class="file-input" accept="application/pdf" onchange="handleFileUpload(event)">
+                            </label>
+                            <span id="fileName" class="file-name hidden"></span>
+                            <button id="clearFileBtn" class="clear-btn hidden" type="button" onclick="clearFile()">Clear</button>
+                        </div>
+                        <div class="pdf-preview">
+                            <div class="pdf-toolbar">
+                                <div class="file-name" id="pdfFilename">No file selected</div>
+                                <div class="controls">
+                                    <button type="button" onclick="prevPage()">Prev</button>
+                                    <span><span id="currentPage">1</span>/<span id="totalPages">1</span></span>
+                                    <button type="button" onclick="nextPage()">Next</button>
+                                    <button type="button" onclick="zoomOut()">-</button>
+                                    <span id="zoomLevel">100%</span>
+                                    <button type="button" onclick="zoomIn()">+</button>
+                                </div>
+                                <a id="pdfOpenLink" class="pdf-fallback" href="#" target="_blank" rel="noopener">Open PDF</a>
+                            </div>
+                            <div class="pdf-canvas-wrap">
+                                <div id="pdfPreviewHost"></div>
+                                <div id="pdfPlaceholder" class="pdf-placeholder">PDF preview will appear here</div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- file input moved into upload label for reliable click -->
+                </div>
+
+                <div class="options">
+                    <div class="option-block">
+                        <div class="option-title">Summary Size</div>
+                        <div class="pill-group">
+                            <button class="pill" data-size="very-small" onclick="setSummarySize('very-small')">Very Small</button>
+                            <button class="pill" data-size="small" onclick="setSummarySize('small')">Small</button>
+                            <button class="pill active" data-size="medium" onclick="setSummarySize('medium')">Medium</button>
+                            <button class="pill" data-size="long" onclick="setSummarySize('long')">Large</button>
+                            <button class="pill" data-size="very-long" onclick="setSummarySize('very-long')">Very Large</button>
+                        </div>
+                    </div>
+                    <div class="option-block">
+                        <div class="option-title">Context Dependency Level</div>
+                        <div class="context-options">
+                            <div class="context-item">
+                                <button class="pill" data-level="easy" onclick="setContextLevel('easy')">Simple Context</button>
+                                <span class="context-help">Straightforward, brief</span>
+                            </div>
+                            <div class="context-item">
+                                <button class="pill active" data-level="medium" onclick="setContextLevel('medium')">Balanced Context</button>
+                                <span class="context-help">Balanced, moderate detail</span>
+                            </div>
+                            <div class="context-item">
+                                <button class="pill" data-level="hard" onclick="setContextLevel('hard')">Detailed Context</button>
+                                <span class="context-help">In-depth, nuanced</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <button class="primary-btn" id="summarizeBtn" onclick="summarize()" disabled>Generate Summary</button>
+            </section>
+
+            <section class="card output-card">
+                <div class="output-header">
+                    <h2>Generated Summary</h2>
+                    <button class="copy-btn hidden" id="copyBtn" onclick="copySummary()" title="Copy to clipboard">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+                        </svg>
+                    </button>
+                </div>
+                <div class="output-body">
+                    <div id="emptyState" class="empty-state">
+                        <p>Your summary will appear here.</p>
+                    </div>
+                    <p id="summaryText" class="summary-text hidden"></p>
+
+                    <div id="statsSection" class="stats hidden">
+                        <div class="stat">
+                            <div class="stat-label">Original Words</div>
+                            <div class="stat-value" id="originalWords">0</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-label">Summary Words</div>
+                            <div class="stat-value" id="summaryWords">0</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-label">Compression</div>
+                            <div class="stat-value" id="compression">0%</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@4.10.38/build/pdf.min.js"></script>
+    <script>
+        const API_URL = 'http://localhost:5002/summarize';
+        
+        const pdfJsReady = typeof window.pdfjsLib !== 'undefined';
+        if (pdfJsReady) {
+            pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@4.10.38/build/pdf.worker.min.js';
+            pdfjsLib.disableWorker = true;
+        } else {
+            console.warn('pdfjsLib not available. Falling back to native PDF preview.');
+        }
+
+        let currentMode = 'text';
+        let uploadedFile = null;
+        let pdfDoc = null;
+        let pdfObjectUrl = null;
+        let pageNum = 1;
+        let pageRendering = false;
+        let pageNumPending = null;
+        let pdfScale = 1.0;
+        let summarySize = 'medium';
+        let contextLevel = 'medium';
+
+        function setSummarySize(size) {
+            summarySize = size;
+            document.querySelectorAll('[data-size]').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.size === size);
+            });
+        }
+
+        function setContextLevel(level) {
+            contextLevel = level;
+            document.querySelectorAll('[data-level]').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.level === level);
+            });
+        }
+
+        function switchMode(mode) {
+            currentMode = mode;
+            document.getElementById('textModeBtn').classList.toggle('active', mode === 'text');
+            document.getElementById('pdfModeBtn').classList.toggle('active', mode === 'pdf');
+            document.getElementById('textMode').classList.toggle('hidden', mode !== 'text');
+            document.getElementById('pdfMode').classList.toggle('hidden', mode !== 'pdf');
+            clearSummary();
+            updateSummarizeButton();
+        }
+
+        function handleFileUpload(event) {
+            const file = event.target.files[0];
+            if (file && file.type === 'application/pdf') {
+                uploadedFile = file;
+                const fileName = document.getElementById('fileName');
+                const clearBtn = document.getElementById('clearFileBtn');
+                const pdfPlaceholder = document.getElementById('pdfPlaceholder');
+                const pdfFilename = document.getElementById('pdfFilename');
+                const pdfPreviewHost = document.getElementById('pdfPreviewHost');
+                const pdfOpenLink = document.getElementById('pdfOpenLink');
+                fileName.textContent = file.name;
+                fileName.classList.remove('hidden');
+                clearBtn.classList.remove('hidden');
+                pdfFilename.textContent = file.name;
+                if (pdfObjectUrl) {
+                    URL.revokeObjectURL(pdfObjectUrl);
+                }
+                pdfObjectUrl = URL.createObjectURL(file);
+                pdfPreviewHost.innerHTML = `
+                    <embed src="${pdfObjectUrl}" type="application/pdf" style="width:100%;height:100%;border:none;" />
+                `;
+                pdfOpenLink.href = pdfObjectUrl;
+                pdfPlaceholder.classList.add('hidden');
+                clearSummary();
+                updateSummarizeButton();
+            }
+        }
+
+        function clearFile() {
+            uploadedFile = null;
+            document.getElementById('fileInput').value = '';
+            document.getElementById('fileName').classList.add('hidden');
+            document.getElementById('clearFileBtn').classList.add('hidden');
+            const pdfPlaceholder = document.getElementById('pdfPlaceholder');
+            const pdfFilename = document.getElementById('pdfFilename');
+            const pdfPreviewHost = document.getElementById('pdfPreviewHost');
+            const pdfOpenLink = document.getElementById('pdfOpenLink');
+            pdfDoc = null;
+            pageNum = 1;
+            document.getElementById('currentPage').textContent = '1';
+            document.getElementById('totalPages').textContent = '1';
+            document.getElementById('zoomLevel').textContent = '100%';
+            pdfFilename.textContent = 'No file selected';
+            if (pdfObjectUrl) {
+                URL.revokeObjectURL(pdfObjectUrl);
+                pdfObjectUrl = null;
+            }
+            pdfPreviewHost.innerHTML = '';
+            pdfOpenLink.href = '#';
+            pdfPlaceholder.classList.remove('hidden');
+            clearSummary();
+            updateSummarizeButton();
+        }
+
+        function renderPage(num) {
+            pageRendering = true;
+            pdfDoc.getPage(num).then((page) => {
+                const canvas = document.getElementById('pdfCanvas');
+                const container = canvas.parentElement;
+                const unscaledViewport = page.getViewport({ scale: 1.0 });
+                const availableWidth = container.clientWidth - 16;
+                const availableHeight = container.clientHeight - 16;
+                const fitScale = Math.min(
+                    availableWidth / unscaledViewport.width,
+                    availableHeight / unscaledViewport.height
+                );
+                const viewport = page.getViewport({ scale: pdfScale * fitScale });
+                const ctx = canvas.getContext('2d');
+                const outputScale = window.devicePixelRatio || 1;
+                canvas.width = Math.floor(viewport.width * outputScale);
+                canvas.height = Math.floor(viewport.height * outputScale);
+                canvas.style.width = `${viewport.width}px`;
+                canvas.style.height = `${viewport.height}px`;
+                ctx.setTransform(outputScale, 0, 0, outputScale, 0, 0);
+                const renderContext = { canvasContext: ctx, viewport };
+                const renderTask = page.render(renderContext);
+                renderTask.promise.then(() => {
+                    pageRendering = false;
+                    document.getElementById('currentPage').textContent = num;
+                    if (pageNumPending !== null) {
+                        renderPage(pageNumPending);
+                        pageNumPending = null;
+                    }
+                }).catch((err) => {
+                    console.error('PDF render error:', err);
+                    const pdfEmbed = document.getElementById('pdfEmbed');
+                    pdfEmbed.style.display = 'block';
+                });
+            });
+        }
+
+        function queueRenderPage(num) {
+            if (pageRendering) {
+                pageNumPending = num;
+            } else {
+                renderPage(num);
+            }
+        }
+
+        function prevPage() {
+            if (!pdfDoc || pageNum <= 1) return;
+            pageNum -= 1;
+            queueRenderPage(pageNum);
+        }
+
+        function nextPage() {
+            if (!pdfDoc || pageNum >= pdfDoc.numPages) return;
+            pageNum += 1;
+            queueRenderPage(pageNum);
+        }
+
+        function zoomIn() {
+            if (!pdfDoc) return;
+            pdfScale = Math.min(pdfScale + 0.1, 2.0);
+            document.getElementById('zoomLevel').textContent = `${Math.round(pdfScale * 100)}%`;
+            queueRenderPage(pageNum);
+        }
+
+        function zoomOut() {
+            if (!pdfDoc) return;
+            pdfScale = Math.max(pdfScale - 0.1, 0.6);
+            document.getElementById('zoomLevel').textContent = `${Math.round(pdfScale * 100)}%`;
+            queueRenderPage(pageNum);
+        }
+
+        function updateSummarizeButton() {
+            const btn = document.getElementById('summarizeBtn');
+            const canSummarize = (currentMode === 'pdf' && uploadedFile) ||
+                                (currentMode === 'text' && document.getElementById('textInput').value.trim());
+            btn.disabled = !canSummarize;
+        }
+
+        document.getElementById('textInput').addEventListener('input', updateSummarizeButton);
+
+        async function summarize() {
+            const btn = document.getElementById('summarizeBtn');
+            btn.disabled = true;
+            btn.innerHTML = `
+                <div class="spinner"></div>
+                Summarizing...
+            `;
+
+            clearSummary();
+
+            try {
+                let requestData = {
+                    summary_size: summarySize,
+                    context_level: contextLevel
+                };
+
+                if (currentMode === 'pdf' && uploadedFile) {
+                    const base64Data = await new Promise((resolve, reject) => {
+                        const reader = new FileReader();
+                        reader.onload = () => resolve(reader.result.split(',')[1]);
+                        reader.onerror = reject;
+                        reader.readAsDataURL(uploadedFile);
+                    });
+                    requestData.pdf_data = base64Data;
+                } else if (currentMode === 'text') {
+                    requestData.text = document.getElementById('textInput').value.trim();
+                }
+
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(requestData),
+                });
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    displaySummary(data.summary, data.original_length, data.summary_length);
+                } else {
+                    displaySummary('Error: ' + (data.error || 'Failed to generate summary'));
+                }
+            } catch (error) {
+                console.error('Error summarizing:', error);
+                displaySummary('An error occurred while generating the summary. Please make sure the Flask server is running on http://localhost:5002');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = `
+                    Summarize
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/>
+                    </svg>
+                `;
+                updateSummarizeButton();
+            }
+        }
+
+        function displaySummary(text, originalLength = 0, summaryLength = 0) {
+            document.getElementById('emptyState').classList.add('hidden');
+            document.getElementById('summaryText').classList.remove('hidden');
+            document.getElementById('summaryText').textContent = text;
+            document.getElementById('copyBtn').classList.remove('hidden');
+            
+            if (originalLength > 0 && summaryLength > 0) {
+                document.getElementById('statsSection').classList.remove('hidden');
+                document.getElementById('originalWords').textContent = originalLength;
+                document.getElementById('summaryWords').textContent = summaryLength;
+                const compression = Math.round((1 - summaryLength / originalLength) * 100);
+                document.getElementById('compression').textContent = compression + '%';
+            }
+        }
+
+        function clearSummary() {
+            document.getElementById('emptyState').classList.remove('hidden');
+            document.getElementById('summaryText').classList.add('hidden');
+            document.getElementById('summaryText').textContent = '';
+            document.getElementById('copyBtn').classList.add('hidden');
+            document.getElementById('statsSection').classList.add('hidden');
+        }
+
+        function copySummary() {
+            const text = document.getElementById('summaryText').textContent;
+            navigator.clipboard.writeText(text).then(() => {
+                const btn = document.getElementById('copyBtn');
+                const originalHTML = btn.innerHTML;
+                btn.innerHTML = `
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                    </svg>
+                `;
+                setTimeout(() => {
+                    btn.innerHTML = originalHTML;
+                }, 2000);
+            });
+        }
+    </script>
+</body>
+</html>
